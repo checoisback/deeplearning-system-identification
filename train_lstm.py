@@ -27,7 +27,7 @@ b = 0.8
 x_0 = [0, 0]
 
 # LSTM model parameters
-model_shape= [8, 4]
+model_shape= [8, 4] #number of hidden units
 num_lookback = 4
 num_epochs = 32
 # =============================================================================
@@ -61,15 +61,16 @@ print('y_train.shape..:', y_train.shape)
 
 
 # Plot one output signal
+pyplot.figure(1) 
 pyplot.subplot(2,1,1)
-pyplot.plot(y_train[0,], 'b')
+pyplot.plot(y_train[0,], 'b', y_train[1,], 'r')
 pyplot.xlabel('Time[s]')
 pyplot.ylabel('Position of Mass[m]')
 pyplot.grid()
 
 # Plot one input signal
 pyplot.subplot(2,1,2)
-pyplot.plot(x_train[0,], 'b')
+pyplot.plot(x_train[0,], 'b', x_train[1,], 'r')
 pyplot.xlabel('Time[s]')
 pyplot.ylabel('Force[N]')
 pyplot.legend(loc='best')
@@ -94,7 +95,7 @@ lstm.fit(x_train, y_train, num_epochs)
 # =============================================================================
 
 
-
+#%%
 # TEST LSTM MODEL AND PLOT
 # =============================================================================
 print('Plotting results...')
@@ -107,6 +108,7 @@ for sample_index in range(x_test.shape[0]):
         y_pred[sample_index, time_index] = lstm.update(x_test[sample_index,time_index,0])
 
 # Plots position of mass
+pyplot.figure(2) 
 pyplot.subplot(2,1,1)
 pyplot.plot(y_test[0,:,0], 'b', label='MSD')
 pyplot.plot(y_pred[0,:,0], 'r', label='LSTM')

@@ -174,7 +174,7 @@ class lstm_model:
             self.model.add(LSTM(num_cells, input_shape=(num_lookback,num_x),
                                 return_sequences=True))
 
-            for num_cells in model_shape[1:-1]:
+            for num_cells in model_shape[1:-1]: # hidden layers
                 self.model.add(LSTM(num_cells, return_sequences=True))
 
             num_cells = model_shape[-1]
@@ -257,13 +257,18 @@ class lstm_model:
 
         # Reshapes data for LSTM model
         x_data, y_data = self._reshape(x_data, y_data)
-
+        
+        print('x_train.shape..:', x_data.shape)
+        print('y_train.shape..:', y_data.shape)
+        
         _, num_lookback, num_x = self.model.layers[0].input_shape
         _, num_y = self.model.layers[-1].output_shape
 
         x_data = x_data.reshape(-1, num_lookback, num_x)
         y_data = y_data.reshape(-1)
-
+        
+        print('x_train.shape..:', x_data.shape)
+        print('y_train.shape..:', y_data.shape)
 
         # Trains LSTM model
         checkpoint = ModelCheckpoint('temp_model.h5', save_best_only=True)
@@ -272,6 +277,8 @@ class lstm_model:
                        callbacks=[checkpoint,])
 
         self.lstm_model = load_model('temp_model.h5')
+        
+        
 
 
 
@@ -297,6 +304,21 @@ class lstm_model:
         self.x[0,-1,1] = y_pred
 
         return y_pred[0]
+    
+    def predict(self, x_data):
+        """predict LSTM model
+    
+        # Arguments
+            x_data: Features data
+        """
+    
+        x_data = copy(x_data)
+
+        # Predicts output
+        y_pred = self.model.predict(self.x)    
+        
+        return y_pred
+
 
 
 
