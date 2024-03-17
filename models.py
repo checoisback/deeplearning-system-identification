@@ -181,7 +181,7 @@ class lstm_model:
             self.model.add(LSTM(num_cells))
 
         self.model.add(Dense(num_y))
-        self.model.compile(loss='mse', optimizer='adam')
+        self.model.compile(loss='mae', optimizer='adam')
 
         self.model.summary()
 

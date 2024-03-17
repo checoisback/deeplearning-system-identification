@@ -23,9 +23,9 @@ num_timesteps = 288 #64
 split_ratio = 0.1
 
 # LSTM model parameters
-model_shape= [30, 4]
-num_lookback = 4
-num_epochs = 128
+model_shape= [8, 4]
+num_lookback = 12
+num_epochs = 32
 # =============================================================================
 
 
@@ -36,7 +36,9 @@ print('Loading data...')
 scalerY = MinMaxScaler()
 y_dataRaw = pd.read_csv(os.path.join('data','virtual','glucose.txt'))
 y_dataRaw = y_dataRaw.to_numpy()
-y_dataScaled = scalerY.fit_transform(y_dataRaw).transpose()
+y_dataScaled = scalerY.fit_transform(y_dataRaw)
+y_dataScaled = y_dataScaled - y_dataScaled[0,:]
+y_dataScaled = y_dataScaled.transpose()
 y_data = y_dataScaled.reshape(num_samples, num_timesteps, 1)
 
 scalerX1 = MinMaxScaler()
@@ -150,7 +152,7 @@ for sample_index in range(x_test.shape[0]):
 
 figure, (ax1, ax2, ax3) = pyplot.subplots(3, 1, figsize=(12, 10), sharex=True, gridspec_kw={'height_ratios': [3, 1, 1]})
 ax1.plot(y_train[0,], 'b', label='target')
-ax1.plot(y_pred[0,], 'r', label='LSTM')
+ax1.plot(y_pred[0,]+abs(y_pred[0,0,0]), 'r', label='LSTM')
 ax1.set_xlabel('Time')
 ax1.set_ylabel('Glucose [mg/dL]')
 ax1.legend(loc='best')
@@ -160,7 +162,7 @@ ax2.plot(x_train[0,:,0])
 ax2.set_ylabel('Bolus')
 ax2.grid()
 
-ax3.plot(x_train[0,:,1])
+ax3.plot(x_test[0,:,1])
 ax3.set_ylabel('Carbs')
 ax3.grid()
 pyplot.tight_layout()
