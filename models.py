@@ -239,8 +239,7 @@ class lstm_model:
         y_data_new = y_data[:,num_lookback:,]
 
         return x_data_new, y_data_new
-
-
+    
 
     def fit(self, x_data, y_data, num_epochs, validation_split=0.2):
         """Trains LSTM model
@@ -286,17 +285,50 @@ class lstm_model:
             Prediction of LSTM model
         """
         # Fills input
-        self.x[0,:-1,0] = self.x[0,1:,0]
-        self.x[0,-1,0] = u
+        self.x[0,:-1,0:2] = self.x[0,1:,0:2]
+        self.x[0,-1,0:2] = u
 
         # Predicts output
         y_pred = self.model.predict(self.x)
 
         # Fills output
-        self.x[0,:-1,1] = self.x[0,1:,1]
-        self.x[0,-1,1] = y_pred
+        self.x[0,:-1,2] = self.x[0,1:,2]
+        self.x[0,-1,2] = y_pred
 
         return y_pred[0]
+    
+    def predictLSTM(self, x_data, y_data):
+        
+        """predict LSTM model
+
+        # Arguments
+            x_data: Features data
+            y_data: Prediction data
+            num_epochs: Number of epochs
+            validation_split: Number of validation sample / Number of training sample
+        """
+
+        x_data = copy(x_data)
+        y_data = copy(y_data)
+
+        # Reshapes data for LSTM model
+        x_data, y_data = self._reshape(x_data, y_data)
+
+        _, num_lookback, num_x = self.model.layers[0].input_shape
+        _, num_y = self.model.layers[-1].output_shape
+
+        x_data = x_data.reshape(-1, num_lookback, num_x)
+        y_data = y_data.reshape(-1)
+        # Predicts output
+        y_pred = self.model.predict(x_data)
+        
+        pyplot.figure()
+        pyplot.plot(y_data[0,],'b',label="glucose target")
+        pyplot.plot(y_pred[0,],'r',label="LSTM")
+        pyplot.tight_layout()
+        pyplot.show()
+
+        return y_pred
 
 
 

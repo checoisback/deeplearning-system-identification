@@ -16,7 +16,7 @@ from matplotlib import pyplot
 # PARAMETERS
 # =============================================================================
 # Data generation parameters
-num_samples = 256 #1024
+num_samples = 10 #1024
 num_timesteps = 64 #64
 split_ratio = 0.2
 
@@ -61,8 +61,11 @@ print('y_train.shape..:', y_train.shape)
 
 
 # Plot one output signal
+pyplot.figure()
 pyplot.subplot(2,1,1)
 pyplot.plot(y_train[0,], 'b')
+pyplot.plot(y_train[1,], 'g')
+pyplot.plot(y_train[2,], 'k')
 pyplot.xlabel('Time[s]')
 pyplot.ylabel('Position of Mass[m]')
 pyplot.grid()
@@ -70,6 +73,8 @@ pyplot.grid()
 # Plot one input signal
 pyplot.subplot(2,1,2)
 pyplot.plot(x_train[0,], 'b')
+pyplot.plot(x_train[1,], 'g')
+pyplot.plot(x_train[2,], 'k')
 pyplot.xlabel('Time[s]')
 pyplot.ylabel('Force[N]')
 pyplot.legend(loc='best')
