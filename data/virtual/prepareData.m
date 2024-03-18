@@ -4,7 +4,7 @@ close all
 
 load dataset
 
-patientData = dataset{1,1};
+patientData = [dataset{1,1};dataset{2,1};dataset{3,1};dataset{4,1};dataset{5,1}];
 
 for k = 1:floor(height(patientData)/288)
     DataTmp = patientData(288*(k-1)+1:288*k,:);
