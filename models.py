@@ -7,7 +7,7 @@ Created on Thu Aug 22 22:36:20 2019
 """
 
 from keras.models import Sequential
-from keras.layers import Dense, LSTM
+from keras.layers import Dense, LSTM, Bidirectional
 from keras.callbacks import ModelCheckpoint
 from keras.models import load_model
 
@@ -171,11 +171,11 @@ class lstm_model:
 
         else:
             num_cells = model_shape[0]
-            self.model.add(LSTM(num_cells, input_shape=(num_lookback,num_x),
+            self.model.add(LSTM(num_cells, activation='elu',input_shape=(num_lookback,num_x),
                                 return_sequences=True))
 
             for num_cells in model_shape[1:-1]:
-                self.model.add(LSTM(num_cells, return_sequences=True))
+                self.model.add(LSTM(num_cells, activation='elu', return_sequences=True))
 
             num_cells = model_shape[-1]
             self.model.add(LSTM(num_cells))
@@ -287,6 +287,28 @@ class lstm_model:
         # Fills input
         self.x[0,:-1,0:2] = self.x[0,1:,0:2]
         self.x[0,-1,0:2] = u
+
+        # Predicts output
+        y_pred = self.model.predict(self.x)
+
+        # Fills output
+        self.x[0,:-1,2] = self.x[0,1:,2]
+        self.x[0,-1,2] = y_pred
+
+        return y_pred[0]
+    
+    def update_v1(self, x0, u0):
+        """Interface function for LSTM model
+
+        # Arguments
+            u: Input value
+
+        # Returns
+            Prediction of LSTM model
+        """
+        # Fills input
+        self.x[0,:,0:2] = u0
+        self.x[0,:,2] = x0
 
         # Predicts output
         y_pred = self.model.predict(self.x)

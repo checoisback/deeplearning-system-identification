@@ -6,7 +6,7 @@ Created on Sat Mar 16 18:26:17 2024
 """
 
 
-from models import mass_spring_damper_model, lstm_model
+from models import lstm_model
 from numpy import cumsum, zeros, random, float32
 from matplotlib import pyplot
 import scipy.io as sio
@@ -25,7 +25,7 @@ split_ratio = 0.1
 # LSTM model parameters
 model_shape= [8, 4]
 num_lookback = 12
-num_epochs = 32
+num_epochs = 64
 # =============================================================================
 
 
@@ -33,11 +33,11 @@ num_epochs = 32
 # LOAD DATA FROM VIRTUAL SUBJECT
 # =============================================================================
 print('Loading data...')
-scalerY = MinMaxScaler()
+scalerY = MinMaxScaler(feature_range=(-1,1))
 y_dataRaw = pd.read_csv(os.path.join('data','virtual','glucose.txt'))
 y_dataRaw = y_dataRaw.to_numpy()
 y_dataScaled = scalerY.fit_transform(y_dataRaw)
-y_dataScaled = y_dataScaled - y_dataScaled[0,:]
+#y_dataScaled = y_dataScaled - y_dataScaled[0,:]
 y_dataScaled = y_dataScaled.transpose()
 y_data = y_dataScaled.reshape(num_samples, num_timesteps, 1)
 
@@ -62,10 +62,11 @@ x3_data = x3_dataScaled.reshape(num_samples,num_timesteps,1)
 x_data = np.concatenate((x2_data,x3_data), axis = 2)
 
 # Split training and test data
-x_test = x_data[:int(num_samples*split_ratio),]
+x_test = x_data[:int(num_samples*split_ratio):,]
 y_test = y_data[:int(num_samples*split_ratio):,]
 x_train = x_data[int(num_samples*split_ratio):,]
 y_train = y_data[int(num_samples*split_ratio):,]
+
 
 print('x_train.shape..:', x_train.shape)
 print('y_train.shape..:', y_train.shape)
@@ -73,7 +74,7 @@ print('y_train.shape..:', y_train.shape)
 
 # Plot one output signal
 pyplot.figure()
-pyplot.subplot(4,1,1)
+pyplot.subplot(3,1,1)
 pyplot.plot(y_train[0,], 'b')
 pyplot.plot(y_train[1,], 'g')
 
@@ -82,24 +83,24 @@ pyplot.ylabel('Glucose [mg/dL]')
 pyplot.grid()
 
 # Plot one input signal
-pyplot.subplot(4,1,2)
+pyplot.subplot(3,1,2)
 pyplot.plot(x_train[0,:,0], 'b')
 pyplot.plot(x_train[1,:,0], 'g')
 
 pyplot.xlabel('Time')
-pyplot.ylabel('basal')
+pyplot.ylabel('insulin')
 pyplot.legend(loc='best')
 pyplot.grid()
 
 # # Plot one input signal
-# pyplot.subplot(4,1,3)
-# pyplot.plot(x_train[0,:,1], 'b')
-# pyplot.plot(x_train[1,:,1], 'g')
+pyplot.subplot(3,1,3)
+pyplot.plot(x_train[0,:,1], 'b')
+pyplot.plot(x_train[1,:,1], 'g')
 
-# pyplot.xlabel('Time')
-# pyplot.ylabel('bolus')
-# pyplot.legend(loc='best')
-# pyplot.grid()
+pyplot.xlabel('Time')
+pyplot.ylabel('carbs')
+pyplot.legend(loc='best')
+pyplot.grid()
 
 # # Plot one input signal
 # pyplot.subplot(4,1,4)
@@ -144,15 +145,19 @@ y_pred = zeros(y_test.shape)
 # pyplot.plot(np.arange(0,288),y_test[0,], 'b', label='target')
 # pyplot.plot(np.arange(num_lookback,288+num_lookback),ypred[0:288,0], 'r', label='LSTM')
 
-
 for sample_index in range(x_test.shape[0]):
-    for time_index in range(x_test.shape[1]):
-        y_pred[sample_index, time_index] = lstm.update(x_train[sample_index,time_index,:])
+    for time_index in range(num_lookback,x_test.shape[1]):
+        if time_index == num_lookback:
+            x0 = y_train[sample_index,:time_index,0]
+            u0 = x_train[sample_index,:time_index,:]
+            y_pred[sample_index, time_index] = lstm.update_v1(x0,u0)
+        else:
+            y_pred[sample_index, time_index] = lstm.update(x_train[sample_index,time_index,:])
 
 
 figure, (ax1, ax2, ax3) = pyplot.subplots(3, 1, figsize=(12, 10), sharex=True, gridspec_kw={'height_ratios': [3, 1, 1]})
 ax1.plot(y_train[0,], 'b', label='target')
-ax1.plot(y_pred[0,]+abs(y_pred[0,0,0]), 'r', label='LSTM')
+ax1.plot(y_pred[0,], 'r', label='LSTM')
 ax1.set_xlabel('Time')
 ax1.set_ylabel('Glucose [mg/dL]')
 ax1.legend(loc='best')
@@ -162,7 +167,7 @@ ax2.plot(x_train[0,:,0])
 ax2.set_ylabel('Bolus')
 ax2.grid()
 
-ax3.plot(x_test[0,:,1])
+ax3.plot(x_train[0,:,1])
 ax3.set_ylabel('Carbs')
 ax3.grid()
 pyplot.tight_layout()
