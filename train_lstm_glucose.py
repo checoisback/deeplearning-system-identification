@@ -18,7 +18,7 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 # PARAMETERS
 # =============================================================================
 # Data generation parameters
-num_samples = 30 #1024
+num_samples = 30*5 #1024
 num_timesteps = 288 #64
 split_ratio = 0.1
 
