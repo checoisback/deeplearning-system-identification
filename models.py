@@ -7,7 +7,7 @@ Created on Thu Aug 22 22:36:20 2019
 """
 
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, Bidirectional
+from keras.layers import Dense, LSTM, Bidirectional, Conv1D, MaxPooling1D, Layer, Input, BatchNormalization, Dropout, Flatten
 from keras.callbacks import ModelCheckpoint
 from keras.models import load_model
 
@@ -167,10 +167,17 @@ class lstm_model:
 
         if self._equal(num_layers, 1):
             num_cells = model_shape[0]
-            self.model.add(LSTM(num_cells, input_shape=(num_lookback,num_x)))
+                
+            self.model.add(Conv1D(filters=64, kernel_size=2, activation='relu',input_shape=(num_lookback,num_x)))
+            self.model.add(BatchNormalization())
+            self.model.add(MaxPooling1D()) # default = 2
+            self.model.add(Dropout(0.3))
+            
+            self.model.add(LSTM(num_cells, activation='elu'))
 
         else:
             num_cells = model_shape[0]
+            
             self.model.add(LSTM(num_cells, activation='elu',input_shape=(num_lookback,num_x),
                                 return_sequences=True))
 
@@ -266,9 +273,14 @@ class lstm_model:
 
         # Trains LSTM model
         checkpoint = ModelCheckpoint('temp_model.h5', save_best_only=True)
-        self.model.fit(x_data, y_data, epochs=num_epochs,
+        self.history = self.model.fit(x_data, y_data, epochs=num_epochs,
                        verbose=1, validation_split=validation_split,
                        callbacks=[checkpoint,])
+        
+        pyplot.figure()
+        pyplot.plot(self.history.history['loss'], label='train')
+        pyplot.plot(self.history.history['val_loss'], label='validation')
+        
 
         self.lstm_model = load_model('temp_model.h5')
 
