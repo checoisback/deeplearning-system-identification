@@ -4,14 +4,12 @@ close all
 
 load dataset
 
-patientData = [dataset{1,1};dataset{2,1};dataset{3,1};dataset{4,1};dataset{5,1}];
-
-for k = 1:floor(height(patientData)/288)
-    DataTmp = patientData(288*(k-1)+1:288*k,:);
-    y(:,k) = DataTmp.CGM;
-    x1(:,k) = DataTmp.Insulin_basal;
-    x2(:,k) = DataTmp.Insulin_bolus;
-    x3(:,k) = DataTmp.Carbohydrates;
+for k = 1:size(dataset)
+    patientData = dataset{k,1};
+    y(:,k) = patientData.CGM;
+    x1(:,k) = patientData.Insulin_basal;
+    x2(:,k) = patientData.Insulin_bolus;
+    x3(:,k) =patientData.Carbohydrates;
 end
 y = array2table(y);
 x1 = array2table(x1);

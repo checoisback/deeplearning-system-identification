@@ -18,14 +18,14 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 # PARAMETERS
 # =============================================================================
 # Data generation parameters
-num_samples = 30*5 #1024
-num_timesteps = 288 #64
+num_samples = 10 #1024
+num_timesteps = 8641 #64
 split_ratio = 0.1
 
 # LSTM model parameters
-model_shape= [8, 4]
-num_lookback = 12
-num_epochs = 64
+model_shape= [16, 8]
+num_lookback = 12*3
+num_epochs = 100
 # =============================================================================
 
 
@@ -33,17 +33,18 @@ num_epochs = 64
 # LOAD DATA FROM VIRTUAL SUBJECT
 # =============================================================================
 print('Loading data...')
-scalerY = MinMaxScaler(feature_range=(-1,1))
+scalerY = StandardScaler()
 y_dataRaw = pd.read_csv(os.path.join('data','virtual','glucose.txt'))
 y_dataRaw = y_dataRaw.to_numpy()
+y_dataRaw = y_dataRaw - y_dataRaw[0,:]
 y_dataScaled = scalerY.fit_transform(y_dataRaw)
 #y_dataScaled = y_dataScaled - y_dataScaled[0,:]
 y_dataScaled = y_dataScaled.transpose()
 y_data = y_dataScaled.reshape(num_samples, num_timesteps, 1)
 
-scalerX1 = MinMaxScaler()
-scalerX2 = MinMaxScaler()
-scalerX3 = MinMaxScaler()
+scalerX1 = StandardScaler()
+scalerX2 = StandardScaler()
+scalerX3 = StandardScaler()
 x1_dataRaw = pd.read_csv(os.path.join('data','virtual','basal.txt'))
 x1_dataRaw = x1_dataRaw.to_numpy()
 x1_dataScaled = scalerX1.fit_transform(x1_dataRaw).transpose()
@@ -62,10 +63,15 @@ x3_data = x3_dataScaled.reshape(num_samples,num_timesteps,1)
 x_data = np.concatenate((x2_data,x3_data), axis = 2)
 
 # Split training and test data
-x_test = x_data[:int(num_samples*split_ratio):,]
-y_test = y_data[:int(num_samples*split_ratio):,]
-x_train = x_data[int(num_samples*split_ratio):,]
-y_train = y_data[int(num_samples*split_ratio):,]
+# x_test = x_data[:int(num_samples*split_ratio):,]
+# y_test = y_data[:int(num_samples*split_ratio):,]
+# x_train = x_data[int(num_samples*split_ratio):,]
+# y_train = y_data[int(num_samples*split_ratio):,]
+
+x_test = x_data[-1:,]
+y_test = y_data[-1:,]
+x_train = x_data[0:,]
+y_train = y_data[0:,]
 
 
 print('x_train.shape..:', x_train.shape)
@@ -146,7 +152,7 @@ y_pred = zeros(y_test.shape)
 # pyplot.plot(np.arange(num_lookback,288+num_lookback),ypred[0:288,0], 'r', label='LSTM')
 
 for sample_index in range(x_test.shape[0]):
-    for time_index in range(num_lookback,x_test.shape[1]):
+    for time_index in range(num_lookback,288*2): #x_test.shape[1]
         if time_index == num_lookback:
             x0 = y_train[sample_index,:time_index,0]
             u0 = x_train[sample_index,:time_index,:]
