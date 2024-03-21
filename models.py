@@ -5,13 +5,13 @@ Created on Thu Aug 22 22:36:20 2019
 
 @author: eadali
 """
-
+import tensorflow as tf
 from keras.models import Sequential
-from keras.layers import LSTM, Dense, Dropout, TimeDistributed, Conv1D, MaxPooling1D, Flatten, Bidirectional, Input, Flatten, Activation, Reshape, RepeatVector, Concatenate, BatchNormalization
+from keras.layers import LSTM, Dense, Dropout, TimeDistributed, Conv1D, MaxPooling1D, Flatten, Bidirectional, Input, Flatten, Activation, Reshape, RepeatVector, Concatenate, BatchNormalization, Masking
 from keras.callbacks import ModelCheckpoint,EarlyStopping
 from keras.models import load_model
 
-
+import numpy  as np
 from scipy.integrate import odeint
 from numpy import sin, copy, zeros, float32
 
@@ -180,7 +180,7 @@ class lstm_model:
             self.model.add(LSTM(num_cells))
         else:
             num_cells = model_shape[0]
-            
+            self.model.add(Masking(mask_value=0.0,input_shape=(num_lookback,num_x)))
             self.model.add(LSTM(num_cells, activation='elu',input_shape=(num_lookback,num_x),
                                 return_sequences=True))
 
@@ -194,7 +194,7 @@ class lstm_model:
         self.model.add(Dense(num_y))
         self.model.compile(loss='mse', optimizer='adam')
 
-        self.model.summary()
+        # self.model.summary()
 
 
 
@@ -244,7 +244,11 @@ class lstm_model:
         # Fills new x_data
         for time_index in range(x_data_new.shape[1]):
             x_data_new[:,time_index,:,0:num_x-num_y] = x_data[:,time_index:time_index+num_lookback]
-            x_data_new[:,time_index,:,num_x-num_y:num_x] = y_data[:,time_index:time_index+num_lookback]
+            #x_data_new[:,time_index,:,num_x-num_y:num_x] = y_data[:,time_index:time_index+num_lookback]#+num_lookback
+            y_masked = y_data[:, time_index:time_index + num_lookback]
+            mask = np.zeros_like(y_masked)
+            mask[:, -2:] = 1  # Mask the last 2 timesteps
+            x_data_new[:, time_index, :, num_x - num_y:num_x] = y_masked * mask
 
         # Creates a new y data
         y_data_new = y_data[:,num_lookback:,]
@@ -288,8 +292,7 @@ class lstm_model:
         
 
         self.lstm_model = load_model('temp_model.h5')
-
-
+        
 
 
     def update(self, u):
@@ -306,7 +309,7 @@ class lstm_model:
         self.x[0,-1,0:2] = u
 
         # Predicts output
-        y_pred = self.model.predict(self.x)
+        y_pred = self.model.predict(self.x, verbose=0)
 
         # Fills output
         self.x[0,:-1,2] = self.x[0,1:,2]
@@ -336,9 +339,9 @@ class lstm_model:
 
         return y_pred[0]
     
-    def predictLSTM(self, x_data, y_data):
-        
-        """predict LSTM model
+
+    def fitSimulation(self, x_data, y_data, num_epochs_sim, num_lookback):
+        """Trains LSTM model for simulation
 
         # Arguments
             x_data: Features data
@@ -346,30 +349,45 @@ class lstm_model:
             num_epochs: Number of epochs
             validation_split: Number of validation sample / Number of training sample
         """
-
-        x_data = copy(x_data)
-        y_data = copy(y_data)
-
-        # Reshapes data for LSTM model
-        x_data, y_data = self._reshape(x_data, y_data)
-
-        _, num_lookback, num_x = self.model.layers[0].input_shape
-        _, num_y = self.model.layers[-1].output_shape
-
-        x_data = x_data.reshape(-1, num_lookback, num_x)
-        y_data = y_data.reshape(-1)
-        # Predicts output
-        y_pred = self.model.predict(x_data)
         
-        pyplot.figure()
-        pyplot.plot(y_data[0,],'b',label="glucose target")
-        pyplot.plot(y_pred[0,],'r',label="LSTM")
-        pyplot.tight_layout()
-        pyplot.show()
-
-        return y_pred
+        lstm = lstm_model([8, 4], num_lookback, 2, 1)
+        lstm.fit(x_data, y_data, 5)
 
 
+        # Define optimizer
+        optimizer = tf.keras.optimizers.Adam()
+        
+
+        # Training loop
+        for epoch in range(num_epochs_sim):
+            
+            y_pred = zeros(y_data.shape)
+            epoch_loss = 0.0
+            
+            with tf.GradientTape() as tape:
+                for sample_index in range(x_data.shape[0]):
+                    for time_index in range(num_lookback, x_data.shape[1]):                    
+                        #Forward pass: generate simulations
+                        if time_index == num_lookback:
+                            x0 = y_data[sample_index,:time_index,0]
+                            u0 = x_data[sample_index,:time_index,:]
+                            y_pred[sample_index, time_index] = lstm.update_v1(x0,u0)  
+                        else:
+                            y_pred[sample_index, time_index] = lstm.update(x_data[sample_index,time_index,:])
+                        
+                # Compute loss using MSE
+                print('here:', y_pred)
+                loss = tf.keras.losses.mean_squared_error(y_data, y_pred)
+                epoch_loss += loss
+                # Compute gradients
+                gradients = tape.gradient(loss, self.model.trainable_variables)
+                # Update model parameters
+                #optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
+            # Print epoch loss
+            print(f'Epoch {epoch + 1}, Loss: {epoch_loss / len(x_data)}')    
+            
+        return lstm_model
+    
 
 
 if __name__ == '__main__':

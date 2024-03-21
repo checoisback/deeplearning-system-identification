@@ -23,9 +23,9 @@ num_timesteps = 8641 #64
 split_ratio = 0.1
 
 # LSTM model parameters
-model_shape= [16, 8]
-num_lookback = 12*3
-num_epochs = 100
+model_shape= [8, 4]
+num_lookback = 4
+num_epochs = 5
 # =============================================================================
 
 
@@ -36,7 +36,7 @@ print('Loading data...')
 scalerY = StandardScaler()
 y_dataRaw = pd.read_csv(os.path.join('data','virtual','glucose.txt'))
 y_dataRaw = y_dataRaw.to_numpy()
-y_dataRaw = y_dataRaw - y_dataRaw[0,:]
+#y_dataRaw = y_dataRaw - y_dataRaw[0,:]
 y_dataScaled = scalerY.fit_transform(y_dataRaw)
 #y_dataScaled = y_dataScaled - y_dataScaled[0,:]
 y_dataScaled = y_dataScaled.transpose()
@@ -136,7 +136,7 @@ num_y = y_train.shape[2]
 lstm = lstm_model(model_shape, num_lookback, num_u, num_y)
 lstm.fit(x_train, y_train, num_epochs)
 # =============================================================================
-
+lstm_model = lstm.fitSimulation(x_train, y_train, 10, num_lookback)
 
 
 #%% TEST LSTM MODEL AND PLOT
