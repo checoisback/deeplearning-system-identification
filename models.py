@@ -168,19 +168,18 @@ class lstm_model:
         if self._equal(num_layers, 1):
             num_cells = model_shape[0]
                 
-            self.model.add(Conv1D(filters=32, kernel_size=5, activation='elu',input_shape=(num_lookback,num_x)))
-            self.model.add(Conv1D(filters=16, kernel_size=3, activation='elu'))
+            # self.model.add(Conv1D(filters=32, kernel_size=5, activation='elu',input_shape=(num_lookback,num_x)))
+            # self.model.add(Conv1D(filters=16, kernel_size=3, activation='elu'))
             
             
-            #self.model.add(BatchNormalization())
-            self.model.add(MaxPooling1D()) # default = 2
-            self.model.add(Flatten())
-            self.model.add(RepeatVector(num_cells))
+            # #self.model.add(BatchNormalization())
+            # self.model.add(MaxPooling1D()) # default = 2
+            # self.model.add(Flatten())
+            # self.model.add(RepeatVector(num_cells))
             self.model.add(LSTM(num_cells, activation='elu', return_sequences=True))
             self.model.add(LSTM(num_cells))
         else:
             num_cells = model_shape[0]
-            self.model.add(Masking(mask_value=0.0,input_shape=(num_lookback,num_x)))
             self.model.add(LSTM(num_cells, activation='elu',input_shape=(num_lookback,num_x),
                                 return_sequences=True))
 
