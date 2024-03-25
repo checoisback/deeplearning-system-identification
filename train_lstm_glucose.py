@@ -23,7 +23,7 @@ num_timesteps = 8641 #64
 split_ratio = 0.1
 
 # LSTM model parameters
-model_shape= [8, 4]
+model_shape= [32]
 num_lookback = 4
 num_epochs = 5
 # =============================================================================
